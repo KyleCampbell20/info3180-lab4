@@ -4,10 +4,13 @@ Jinja2 Documentation:    http://jinja.pocoo.org/2/documentation/
 Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
+
 import os
 from app import app
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from werkzeug.utils import secure_filename
+from .forms import Uploadform
+
 
 
 ###
@@ -26,21 +29,55 @@ def about():
     return render_template('about.html', name="Mary Jane")
 
 
-@app.route('/upload', methods=['POST', 'GET'])
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
+    
     if not session.get('logged_in'):
         abort(401)
-
-    # Instantiate your form class
-
+# Instantiate your form class
+    myform = Uploadform()
     # Validate file upload on submit
-    if request.method == 'POST':
-        # Get file data and save to your uploads folder
-
+    
+    if request.method== 'POST' and myform.validate_on_submit():
+        # Get file data and save to your uploads folder 
+            
+        photo = myform.photo.data 
+        filename = secure_filename(photo.filename)
+        photo.save(os.path.join(
+            app.config['UPLOAD_FOLDER'], filename
+        ))
+           
         flash('File Saved', 'success')
         return redirect(url_for('home'))
+    flash_errors(myform)
+    return render_template('upload.html', form=myform)
 
-    return render_template('upload.html')
+
+
+
+def get_uploaded_images():
+    rootdir = os.getcwd()
+    myPics = []
+    print(rootdir)
+    
+    for subdir, dirs, files in os.walk('./uploads'):
+        for file in files:
+            myPics.append(os.path.join(subdir, file))
+    return myPics
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    return send_from_directory(os.path.join(os.getcwd(), app.config['ULOAD_FOLDER'], filename))
+
+
+@app.route('/files')
+def files():
+    if not session.get('logged_in'):
+        filename = get_uploaded_images()
+        return render_template('files.hml', filename = filename)
+    else:
+        abort(401)
+    
 
 
 @app.route('/login', methods=['POST', 'GET'])

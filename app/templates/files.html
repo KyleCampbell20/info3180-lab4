@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block main %}
+
+<h1 class="page-header">View Images</h1>
+
+{% include 'flash_messages.html' %}
+
+<div class="Album">
+    {% for file in filenames %}
+        <img class="photo" src="{{ file }}" alt="Photo" height="250px" width="250px">
+    {% endfor %}
+</div>
+{% endblock %}
